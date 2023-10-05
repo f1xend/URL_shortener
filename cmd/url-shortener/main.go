@@ -1,7 +1,15 @@
-package main 
+package main
 
-func main(){
-	// TODO: init config: cleanenv
+import (
+	"fmt"
+
+	"github.com/f1xend/URL_shortener/internal/config"
+)
+
+func main() {
+	cfg := config.MustLoad()
+
+	fmt.Println(cfg)
 
 	// TODO: init loggeer: slog
 
@@ -9,6 +17,6 @@ func main(){
 
 	// TODO: init router: chi, "chi render"
 
-	// TODO: run server: 
+	// TODO: run server:
 
 }
