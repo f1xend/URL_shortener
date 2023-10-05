@@ -1,3 +1,8 @@
-"editor.quickSuggestions": {
-    "strings": true
+{
+        "editor.quickSuggestions": {
+        "strings": true
+    },
+    "terminal.integrated.env.windows": {
+        "PATH": "C:\\MinGW64\\mingw64\\bin;${env:PATH}"
+}
 }

@@ -6,6 +6,8 @@ import (
 	"log/slog"
 
 	"github.com/f1xend/URL_shortener/internal/config"
+	"github.com/f1xend/URL_shortener/internal/lib/logger/sl"
+	"github.com/f1xend/URL_shortener/internal/storage/sqlite"
 )
 
 const (
@@ -22,7 +24,13 @@ func main() {
 	log.Info("starting url-shorter", slog.String("env", cfg.Env))
 	log.Debug("debug messages are enabled")
 
-	// TODO: init storage: sqlite
+	storage, err := sqlite.New(cfg.StoragePath)
+	if err != nil {
+		log.Error("failed to init storage", sl.Err(err))
+		os.Exit(1)
+	}
+
+	_ = storage
 
 	// TODO: init router: chi, "chi render"
 
