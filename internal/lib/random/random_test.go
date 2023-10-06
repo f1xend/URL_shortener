@@ -1,44 +1,54 @@
 package random
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestNewRandomString(t *testing.T) {
 	tests := []struct {
-		name   string
-		length int
+		name string
+		size int
 	}{
 		{
-			name:   "lenght = 1",
-			length: 1,
+			name: "size = 1",
+			size: 1,
 		},
 		{
-			name:   "lenght = 3",
-			length: 3,
+			name: "size = 5",
+			size: 5,
 		},
 		{
-			name:   "lenght 5",
-			length: 5,
+			name: "size = 10",
+			size: 10,
 		},
 		{
-			name:   "lenght 10",
-			length: 10,
+			name: "size = 20",
+			size: 20,
 		},
 		{
-			name:   "lenght 15",
-			length: 15,
-		},
-		{
-			name:   "lenght 20",
-			length: 20,
+			name: "size = 30",
+			size: 30,
 		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			str1 := NewRandomString(tt.size)
+			time.Sleep(10 * time.Microsecond)
+			str2 := NewRandomString(tt.size)
 
-	for _, v := range tests {
-		t.Run(v.name, func(t *testing.T) {
-			str := NewRandomString(v.length)
-			if len(str) != v.length {
-				t.Errorf("got %d, want %d", len(str), v.length)
-			}
+			assert.Len(t, str1, tt.size)
+			assert.Len(t, str2, tt.size)
+
+			fmt.Println(str1, " ", str2)
+
+			// Check that two generated strings are different
+			// This is not an absolute guarantee that the function works correctly,
+			// but this is a good heuristic for a simple random generator.
+			assert.NotEqual(t, str1, str2)
 		})
 	}
 }
