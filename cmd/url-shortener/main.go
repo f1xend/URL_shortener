@@ -1,11 +1,13 @@
 package main
 
 import (
+	"net/http"
 	"os"
 
 	"log/slog"
 
 	"github.com/f1xend/URL_shortener/internal/config"
+	"github.com/f1xend/URL_shortener/internal/http-server/handlers/url/save"
 	mwlogger "github.com/f1xend/URL_shortener/internal/http-server/middleware/logger"
 	"github.com/f1xend/URL_shortener/internal/lib/logger/sl"
 	"github.com/f1xend/URL_shortener/internal/lib/logger/sl/handlers/slogpretty"
@@ -39,10 +41,28 @@ func main() {
 	_ = storage
 
 	router.Use(middleware.RequestID)
+	router.Use(middleware.Logger)
 	router.Use(mwlogger.New(log))
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
+	router.Post("/url", save.New(log, storage))
+
+	log.Info("starting server", slog.String("address", cfg.Address))
+
+	srv := &http.Server{
+		Addr:         cfg.Address,
+		Handler:      router,
+		ReadTimeout:  cfg.HTTPServer.Timeout,
+		WriteTimeout: cfg.HTTPServer.Timeout,
+		IdleTimeout:  cfg.HTTPServer.Idle_timeout,
+	}
+
+	if err := srv.ListenAndServe(); err != nil {
+		log.Error("failed to start server")
+	}
+
+	log.Error("server stopped")
 	// middleware
 
 	// name, err := storage.GetURL("google")
