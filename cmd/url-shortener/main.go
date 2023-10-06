@@ -6,8 +6,12 @@ import (
 	"log/slog"
 
 	"github.com/f1xend/URL_shortener/internal/config"
+	mwlogger "github.com/f1xend/URL_shortener/internal/http-server/middleware/logger"
 	"github.com/f1xend/URL_shortener/internal/lib/logger/sl"
+	"github.com/f1xend/URL_shortener/internal/lib/logger/sl/handlers/slogpretty"
 	"github.com/f1xend/URL_shortener/internal/storage/sqlite"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 const (
@@ -30,9 +34,36 @@ func main() {
 		os.Exit(1)
 	}
 
+	router := chi.NewRouter()
+
 	_ = storage
 
-	// TODO: init router: chi, "chi render"
+	router.Use(middleware.RequestID)
+	router.Use(mwlogger.New(log))
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.URLFormat)
+
+	// middleware
+
+	// name, err := storage.GetURL("google")
+	// if err != nil {
+	// 	log.Error("failed to get URL", sl.Err(err))
+	// 	os.Exit(1)
+	// }
+	// log.Info("get url", slog.StringValue(name))
+
+	// err = storage.DeleteURL("google")
+	// if err != nil {
+	// 	log.Error("failed to get URL", sl.Err(err))
+	// 	os.Exit(1)
+	// }
+
+	// name, err := storage.GetURL("google")
+	// if err != nil {
+	// 	log.Error("failed to get URL", sl.Err(err))
+	// 	os.Exit(1)
+	// }
+	// log.Info("get url", slog.StringValue(name))
 
 	// TODO: run server:
 
@@ -43,9 +74,8 @@ func setupLogger(env string) *slog.Logger {
 
 	switch env {
 	case envLocal:
-		log = slog.New(
-			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
-		)
+		log = setupPrettySlog()
+
 	case envDev:
 		log = slog.New(
 			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
@@ -57,4 +87,16 @@ func setupLogger(env string) *slog.Logger {
 	}
 
 	return log
+}
+
+func setupPrettySlog() *slog.Logger {
+	opts := slogpretty.PrettyHandlerOptions{
+		SlogOpts: &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		},
+	}
+
+	handler := opts.NewPrettyHandler(os.Stdout)
+
+	return slog.New(handler)
 }
