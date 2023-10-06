@@ -1,8 +1,19 @@
 package save_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
+
+	"github.com/f1xend/URL_shortener/internal/http-server/handlers/url/save"
+	"github.com/f1xend/URL_shortener/internal/http-server/handlers/url/save/mocks"
+	"github.com/f1xend/URL_shortener/internal/lib/logger/sl/handlers/slogpretty/slogdiscard"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSaveHandler(t *testing.T) {
@@ -11,7 +22,7 @@ func TestSaveHandler(t *testing.T) {
 		alias     string
 		url       string
 		respError string
-		mockError string
+		mockError error
 	}{
 		{
 			name:  "Success",
@@ -50,11 +61,33 @@ func TestSaveHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			urlSaveMock := mocks.NewURLSaver(t)
+			urlSaverMock := mocks.NewURLSaver(t)
 
 			if tc.respError == "" || tc.mockError != nil {
-				ur
+				urlSaverMock.On("SaveURL", tc.url, mock.AnythingOfType("string")).
+					Return(int64(1), tc.mockError).
+					Once()
 			}
+
+			handler := save.New(slogdiscard.NewDiscardLogger(), urlSaverMock)
+
+			input := fmt.Sprintf(`{"url": "%s", "alias": "%s"}`, tc.url, tc.alias)
+
+			req, err := http.NewRequest(http.MethodPost, "/save", bytes.NewReader([]byte(input)))
+			require.NoError(t, err)
+
+			rr := httptest.NewRecorder()
+			handler.ServeHTTP(rr, req)
+
+			require.Equal(t, rr.Code, http.StatusOK)
+
+			body := rr.Body.String()
+
+			var resp save.Response
+
+			require.NoError(t, json.Unmarshal([]byte(body), &resp))
+
+			require.Equal(t, tc.respError, resp.Error)
 		})
 	}
 }
