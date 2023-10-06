@@ -7,6 +7,8 @@ import (
 	"log/slog"
 
 	"github.com/f1xend/URL_shortener/internal/config"
+	"github.com/f1xend/URL_shortener/internal/http-server/handlers/delete"
+	"github.com/f1xend/URL_shortener/internal/http-server/handlers/redirect"
 	"github.com/f1xend/URL_shortener/internal/http-server/handlers/url/save"
 	mwlogger "github.com/f1xend/URL_shortener/internal/http-server/middleware/logger"
 	"github.com/f1xend/URL_shortener/internal/lib/logger/sl"
@@ -27,7 +29,11 @@ func main() {
 
 	log := setupLogger(cfg.Env)
 
-	log.Info("starting url-shorter", slog.String("env", cfg.Env))
+	log.Info(
+		"starting url-shorter",
+		slog.String("env", cfg.Env),
+		slog.String("version", "123"),
+	)
 	log.Debug("debug messages are enabled")
 
 	storage, err := sqlite.New(cfg.StoragePath)
@@ -38,8 +44,6 @@ func main() {
 
 	router := chi.NewRouter()
 
-	_ = storage
-
 	router.Use(middleware.RequestID)
 	router.Use(middleware.Logger)
 	router.Use(mwlogger.New(log))
@@ -47,6 +51,8 @@ func main() {
 	router.Use(middleware.URLFormat)
 
 	router.Post("/url", save.New(log, storage))
+	router.Get("/{alias}", redirect.New(log, storage))
+	router.Delete("/{alias}", delete.New(log, storage))
 
 	log.Info("starting server", slog.String("address", cfg.Address))
 
